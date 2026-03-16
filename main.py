@@ -159,4 +159,4 @@ if __name__ == "__main__":
 
     intents = botpy.Intents(public_guild_messages=True, public_messages=True)
     client  = EdFlowerBot(intents=intents)
-    client.run(appid=config.BOT_APPID, token=config.BOT_TOKEN)
+    client.run(appid=config.BOT_APPID, secret=config.BOT_SECRET)

@@ -1,6 +1,6 @@
 # ── Bot 凭证 ──────────────────────────────────────────────
-BOT_APPID  = "YOUR_APP_ID"       # QQ 机器人 AppID
-BOT_TOKEN  = "YOUR_BOT_TOKEN"    # QQ 机器人 Token
+BOT_APPID   = "YOUR_APP_ID"      # QQ 机器人 AppID
+BOT_SECRET  = "YOUR_BOT_SECRET"  # QQ 机器人 Secret（开放平台 → 机器人详情 → Secret）
 
 # ── 主动推送目标群聊 openid ──────────────────────────────
 # 在 QQ 开放平台后台或通过机器人收到的群消息事件中获取 group_openid
