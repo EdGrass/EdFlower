@@ -64,29 +64,40 @@ class EdFlowerBot(botpy.Client):
         asyncio.create_task(self._refresh_data_loop())
         asyncio.create_task(self._push_loop())
 
-    # ── 被动回复 ──────────────────────────────────────────
+    # ── 被动回复（频道 @ 消息）────────────────────────────
     async def on_at_message_create(self, message: Message):
         content = message.content or ""
-        # botpy 消息正文会包含 @机器人 的 mention，去掉它
         content = content.replace(f"<@!{self.robot.id}>", "").strip()
+        logger.info("频道消息 [%s]: %s", message.author.username, content)
+        reply_text = self._build_reply(content)
+        await message.reply(content=reply_text)
 
-        logger.info("收到消息 [%s]: %s", message.author.username, content)
+    # ── 被动回复（群聊 @ 消息）────────────────────────────
+    async def on_group_at_message_create(self, message):
+        content = message.content or ""
+        content = content.replace(f"<@!{self.robot.id}>", "").strip()
+        logger.info("群消息 [%s]: %s", message.author.member_openid, content)
+        reply_text = self._build_reply(content)
+        await self.api.post_group_message(
+            group_openid=message.group_openid,
+            msg_type=0,
+            content=reply_text,
+            msg_id=message.id,
+        )
 
+    def _build_reply(self, content: str) -> str:
         filename = parse_keyword(content)
         if filename:
-            reply_text = read_data_file(filename)
-        else:
-            city_list = " / ".join(config.WEATHER_CITIES)
-            reply_text = (
-                "👋 你好！我是 EdFlower，可用指令：\n"
-                "  cf / codeforces          — Codeforces 比赛\n"
-                "  at / atcoder             — AtCoder 比赛\n"
-                f"  weather / 天气           — 默认城市天气（{config.WEATHER_CITIES[0]}）\n"
-                f"  weather <城市> / <城市>天气 — 指定城市天气\n"
-                f"  支持城市: {city_list}"
-            )
-
-        await message.reply(content=reply_text)
+            return read_data_file(filename)
+        city_list = " / ".join(config.WEATHER_CITIES)
+        return (
+            "👋 你好！我是 EdFlower，可用指令：\n"
+            "  cf / codeforces          — Codeforces 比赛\n"
+            "  at / atcoder             — AtCoder 比赛\n"
+            f"  weather / 天气           — 默认城市天气（{config.WEATHER_CITIES[0]}）\n"
+            f"  weather <城市> / <城市>天气 — 指定城市天气\n"
+            f"  支持城市: {city_list}"
+        )
 
     # ── 主动推送后台任务 ──────────────────────────────────
     async def _push_loop(self):
@@ -146,6 +157,6 @@ class EdFlowerBot(botpy.Client):
 if __name__ == "__main__":
     os.makedirs(config.DATA_DIR, exist_ok=True)
 
-    intents = botpy.Intents(public_guild_messages=True, group_at_messages=True)
+    intents = botpy.Intents(public_guild_messages=True, public_messages=True)
     client  = EdFlowerBot(intents=intents)
     client.run(appid=config.BOT_APPID, token=config.BOT_TOKEN)
