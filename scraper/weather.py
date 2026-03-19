@@ -21,10 +21,17 @@ class WeatherScraper(HTTPScraper):
 
     def format(self, raw: Any) -> str:
         try:
-            cur    = raw["current_condition"][0]
-            area   = raw["nearest_area"][0]
-            city   = area["areaName"][0]["value"]
-            region = area["region"][0]["value"]
+            # wttr.in may wrap response under a "data" key
+            data   = raw.get("data", raw)
+            cur    = data["current_condition"][0]
+            # nearest_area removed in newer API; fall back to configured city name
+            if "nearest_area" in data:
+                area   = data["nearest_area"][0]
+                city   = area["areaName"][0]["value"]
+                region = area["region"][0]["value"]
+                city_str = f"{city}, {region}"
+            else:
+                city_str = self.city
 
             temp_c  = cur["temp_C"]
             feels   = cur["FeelsLikeC"]
@@ -36,7 +43,7 @@ class WeatherScraper(HTTPScraper):
 
             # 未来 3 天预报
             forecasts = []
-            for day in raw.get("weather", [])[:3]:
+            for day in data.get("weather", [])[:3]:
                 date    = day["date"]
                 max_t   = day["maxtempC"]
                 min_t   = day["mintempC"]
@@ -45,7 +52,7 @@ class WeatherScraper(HTTPScraper):
                 forecasts.append(f"  {date}  {min_t}~{max_t}°C  {desc3}")
 
             lines = [
-                f"🌤 {city}, {region} 天气",
+                f"🌤 {city_str} 天气",
                 "=" * 30,
                 f"当前: {desc}  {temp_c}°C (体感 {feels}°C)",
                 f"湿度: {humidity}%  风速: {wind_kmh} km/h {wind_dir}  能见度: {vis} km",
